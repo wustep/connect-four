@@ -1,0 +1,42 @@
+body {
+	padding: 15px;
+}
+.circle {
+	border-radius: 50%;
+	width: 60px;
+	height: 60px; 
+	background-color: white;
+	display: inline-block;
+	margin: 4px;
+	text-align: center;
+}
+.box {
+    width: 68px;
+	height: 70px;
+	background-color: #1E90FF;
+	display: inline-block;
+}
+.circle.red {
+	background-color: #FF0A0A;
+}
+.circle.yellow {
+	background-color: #F5F500;
+}
+.red span {
+	color: red;
+}
+.yellow span {
+	color: #D7D700;
+}
+.place {
+	height: 20px;
+	width: 60px !important;
+	margin: 5px 4px;
+}
+.last {
+	font-weight: bold;
+}
+.next span {
+	font-weight: bold;
+	text-decoration: underline;
+}

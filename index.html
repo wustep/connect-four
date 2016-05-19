@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Connect Four</title>
+<link href="resources/lib/jquery-ui.min.css" rel="stylesheet">
+<link href="resources/normalize.css" rel="stylesheet">
+<link href="resources/main.css" rel="stylesheet">
+</head>
+<body>
+	<div id='game'>
+	<button id='reset'>Reset</button>
+	<button id='yellow' class='yellow next' value='human'>Human</button> versus
+	<button id='red' class='red' value='human'>Human</button>
+	<button id='swap'>Swap</button>
+	<div id='board'>
+	</div>
+	<br>
+	</div>
+	<script src="resources/lib/jquery.min.js"></script>
+	<script src="resources/lib/jquery-ui.min.js"></script>
+	<script src="resources/connect-four.js"></script>
+	<script>
+		setupBoard();
+		setupTriggers();
+</script>
+</body>
+</html>	
