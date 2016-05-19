@@ -1,5 +1,8 @@
 body {
 	padding: 15px;
+	-webkit-user-select: none;       
+	-moz-user-select: none; 
+	-ms-user-select: none; 
 }
 .circle {
 	border-radius: 50%;
@@ -17,16 +20,22 @@ body {
 	display: inline-block;
 }
 .circle.red {
-	background-color: #FF0A0A;
+	background: #D12B51; 
+	background: -moz-radial-gradient(center, ellipse cover, #D12B51 0%, #BD173D 100%); 
+	background: -webkit-radial-gradient(center, ellipse cover, #D12B51 0%, #BD173D 100%); 
+	background: radial-gradient(ellipse at center, #D12B51 0%, #BD173D 100%);
 }
 .circle.yellow {
-	background-color: #F5F500;
+	background: #f1e767; 
+	background: -moz-radial-gradient(center, ellipse cover, #f1e767 0%, #feb645 100%); 
+	background: -webkit-radial-gradient(center, ellipse cover, #f1e767 0%, #feb645 100%);
+	background: radial-gradient(ellipse at center, #f1e767 0%, #feb645 100%); 
 }
 .red span {
-	color: red;
+	color: #D12B51;
 }
 .yellow span {
-	color: #D7D700;
+	color: #D3C949;
 }
 .place {
 	height: 20px;
@@ -39,4 +48,7 @@ body {
 .next span {
 	font-weight: bold;
 	text-decoration: underline;
+}
+.hover {
+	cursor: pointer;
 }

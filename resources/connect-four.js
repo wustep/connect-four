@@ -10,7 +10,7 @@ function setupBoard() {
 	$(".place").button({icons: { primary: "ui-icon-carat-1-s" }, text: false})
 	$(".place").click(function() {
 		var column = $(this).attr("id").split('-')[1];
-		placePiece(column, color);
+		placePiece(column);
 	});
 	for (var i = 1; i < 43; i++) {
 		$("#board").append("<div class='box'><div class='circle' id='circle-"+i+"'>"+i+"</div></div>");
@@ -18,6 +18,7 @@ function setupBoard() {
 			$("#board").append("<br>");
 		}
 	}
+	playAI();
 }
 
 function setupTriggers() {
@@ -27,6 +28,7 @@ function setupTriggers() {
 		$(this).attr("value", against.toLowerCase());
 		$("span", this).html(against);
 		checkDisable();
+		aiMove = setTimeout(function() { if (!aiMove) playAI(); aiMove = null; }, 500);
 	});
 	$('#reset').button({icons:{ primary: " ui-icon-refresh" }}).click(function() {
 		setupBoard();
@@ -35,22 +37,42 @@ function setupTriggers() {
 	$('#swap').button().click(function() {
 		swapNext();
 	});
+	$('.circle').hover(
+	function() {
+		if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
+			$(this).addClass(color + " hover");
+		}
+	},
+	function() {
+		if ($(this).hasClass("hover")) {
+			$(this).removeClass(color + " hover");
+		}
+	}
+	).click(
+	function() {
+		if ($('.next').attr('value') != "ai" && $(this).hasClass('hover')) {
+			var id = $(this).attr("id").split('-')[1];
+			placePiece(id);
+		}
+	});
 }
 
 function swapNext() {
 	$('#yellow, #red').toggleClass("next");
 	color = $('.next').attr("id");
 	checkDisable();
+	aiMove = setTimeout(function() { if (!aiMove) playAI(); aiMove = null; }, 1000);
 }
 
-function placePiece(place, color) {
+function placePiece(place) {
+	var placeColor = color;
 	var placed = false;
-	if (place < 43 && !$("#circle-"+place).is('.yellow, .red')) { // Check valid and empty
+	if (place < 43 && ($("#circle-"+place).hasClass('hover') || !$("#circle-"+place).is('.yellow, .red'))) { // Check valid and empty
 		placed = true;
 		$(".circle.last").removeClass("last");
-		$("#circle-"+place).addClass(color + " last");
-		if (placePiece((parseInt(place) + 7), color) == true) { // Try to place into slot below it and check
-			$("#circle-"+place).removeClass(color + " last");
+		$("#circle-"+place).addClass(placeColor + " last");
+		if (placePiece((parseInt(place) + 7)) == true) { // Try to place into slot below it and check
+			$("#circle-"+place).removeClass(placeColor + " last");
 		} else {
 			swapNext();
 		}
@@ -65,7 +87,6 @@ function checkWon(player) { // Player "yellow" = 1, "red" = 2
 function checkDisable() {
 	if ($('.next').attr('value') == "ai") {
 		$('.place').button('disable');
-		aiMove = setTimeout(function() { playAI() }, 3000);
 	} else {
 		$('.place').button("enable");
 	}
@@ -74,9 +95,11 @@ function checkDisable() {
 function generateBoard() {
 	var board = new Array(42).fill(0);
 	$(".circle.yellow, .circle.red").each(function() {
-		var id = $(this).attr("id").split('-')[1];
-		var color = $(this).attr("class").match(/placed\-\w{1,}/)[0].split('-')[1] == "yellow" ? 1 : 2; // Let yellow be 1 and red be 2
-		board[id] = color;
+		if (!$(this).hasClass('hover')) {
+			var id = $(this).attr("id").split('-')[1];
+			var color = $(this).attr("class").match(/placed\-\w{1,}/)[0].split('-')[1] == "yellow" ? 1 : 2; // Let yellow be 1 and red be 2
+			board[id] = color;
+		}
 	});
 	return board;
 }
@@ -97,7 +120,7 @@ function playAI() {
 		var placed = false;
 		while (!placed && !checkFull()) {
 			var rand = Math.floor((Math.random() * 7) + 1);
-			placed = placePiece(rand, color);
+			placed = placePiece(rand);
 		}
 	}
 }
