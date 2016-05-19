@@ -18,7 +18,6 @@ function setupBoard() {
 			$("#board").append("<br>");
 		}
 	}
-	playAI();
 }
 
 function setupTriggers() {
@@ -27,12 +26,14 @@ function setupTriggers() {
 		var against = $(this).attr("value") == "human" ? "AI" : "Human";
 		$(this).attr("value", against.toLowerCase());
 		$("span", this).html(against);
-		checkDisable();
-		aiMove = setTimeout(function() { if (!aiMove) playAI(); aiMove = null; }, 500);
+		if (checkDisable()) {
+			aiMove = setTimeout(function() { playAI(); }, 1000);
+		}
 	});
 	$('#reset').button({icons:{ primary: " ui-icon-refresh" }}).click(function() {
 		setupBoard();
 		checkDisable();
+		clearTimeout(aiMove);
 	});
 	$('#swap').button().click(function() {
 		swapNext();
@@ -60,8 +61,9 @@ function setupTriggers() {
 function swapNext() {
 	$('#yellow, #red').toggleClass("next");
 	color = $('.next').attr("id");
-	checkDisable();
-	aiMove = setTimeout(function() { if (!aiMove) playAI(); aiMove = null; }, 1000);
+	if (checkDisable()) {
+		aiMove = setTimeout(function() { playAI(); }, 1000);
+	}
 }
 
 function placePiece(place) {
@@ -84,21 +86,29 @@ function checkWon(player) { // Player "yellow" = 1, "red" = 2
 	var board = generateBoard();
 }
 
-function checkDisable() {
+function checkDisable() { // Check if game needs to disable drop buttons
+	var disabled = false;
 	if ($('.next').attr('value') == "ai") {
+		disabled = true;
 		$('.place').button('disable');
 	} else {
 		$('.place').button("enable");
 	}
+	return disabled;
 }
 
 function generateBoard() {
-	var board = new Array(42).fill(0);
+	var board = new Array(6);
+	for (var i = 0; i < 6; i++) {
+		board[i] = new Array(7).fill(0);
+	}
 	$(".circle.yellow, .circle.red").each(function() {
 		if (!$(this).hasClass('hover')) {
 			var id = $(this).attr("id").split('-')[1];
-			var color = $(this).attr("class").match(/placed\-\w{1,}/)[0].split('-')[1] == "yellow" ? 1 : 2; // Let yellow be 1 and red be 2
-			board[id] = color;
+			var color = $(this).hasClass("yellow") ? 1 : 2;
+			var row = Math.floor((id - 1) / 7);
+			var column = id - (row * 7) - 1;
+			board[row][column] = color;
 		}
 	});
 	return board;
@@ -125,12 +135,11 @@ function playAI() {
 	}
 }
 /*
-board[0] =  1  2  3  4  5  6  7
-board[1] =  8  9 10 11 12 13 14
-board[2] = 15 16 17 18 19 20 21
-board[3] = 22 23 24 25 26 27 28
-board[4] = 29 30 31 32 33 34 35
-board[5] = 36 37 38 39 40 41 42 
- OR
-board[x] = pos?
+           [0][1][2][3][4][5][6]
+board[0] -  1  2  3  4  5  6  7 
+board[1] -  8  9 10 11 12 13 14 
+board[2] - 15 16 17 18 19 20 21
+board[3] - 22 23 24 25 26 27 28
+board[4] - 29 30 31 32 33 34 35
+board[5] - 36 37 38 39 40 41 42
 */
