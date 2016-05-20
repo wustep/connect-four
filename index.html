@@ -16,14 +16,17 @@
 	<button id='swap'>Swap</button>
 	<div id='board'>
 	</div>
+	<div id="win-dialog" title="Winner" style="display:none;">
+		<p><span class="ui-icon ui-icon-star" style="display:inline-block"></span> <span id='winner'>Player</span> has won the game!</p>
+	</div>
 	<br>
 	</div>
 	<script src="resources/lib/jquery.min.js"></script>
 	<script src="resources/lib/jquery-ui.min.js"></script>
 	<script src="resources/connect-four.js"></script>
 	<script>
-		setupBoard();
 		setupTriggers();
-</script>
+		setupBoard();
+	</script>
 </body>
 </html>	

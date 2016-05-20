@@ -1,15 +1,32 @@
 var color = "yellow";
 var aiMove;
+var winDialog = $("#win-dialog").dialog({
+	modal: true,
+	autoOpen: false,
+	height: 215,
+	width: 380,	
+	buttons: {
+		"New Game": function() {
+			$("#reset").trigger("click");
+			$(this).dialog("close");
+		},
+		Close: function() {
+			$(this).dialog("close");
+		}
+	}		
+});
 
 // setupBoard - Set up or reset the game board and placement buttons
 function setupBoard() {
+	$("#swap").button("enable");
+	$("#yellow, #red").button("enable");
 	$("#board").html("");
 	for (var i = 0; i < 7; i++) { // Add place buttons
 		$("#board").append("<button class='place' id='place-"+i+"'></button>")
 	}
 	$("#board").append("<br>")
 	$(".place").button({icons: { primary: "ui-icon-carat-1-s" }, text: false})
-	$(".place").click(function() {
+	$(".place").on("click", function() {
 		var column = $(this).attr("id").split('-')[1];
 		placePiece(column);
 	});
@@ -20,11 +37,34 @@ function setupBoard() {
 		}
 		$("#board").append("<br>");
 	}
+	$('#board').on({ // TODO: Fix redundancy here and for .place - This method is repeatedly called
+		mouseenter: function() {
+			if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
+				$(this).addClass("h-"+color + " hover");
+			}
+		},
+		mouseleave: function() {
+			if ($(this).hasClass("hover")) {
+				$(this).removeClass("h-"+color + " hover");
+			}
+		},
+		click: function() { 
+			if ($('.next').attr('value') != "ai" && $(this).hasClass('hover') && !$(this).is('.yellow, .red')) {
+				var id = $(this).attr('id').substring(7);
+				placePiece(id);
+				$(this).removeClass("h-yellow h-red");
+				if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
+					$(this).addClass("h-"+color + " hover");
+				}
+			}
+		}
+	}, ".circle");
 }
 
 // setupTriggers - Set up various button and div, hover/click triggers
 function setupTriggers() {
 	$('#reset').button({icons:{ primary: " ui-icon-refresh" }}).click(function() {
+		$("#board").off("mouseenter mouseleave click", ".circle");
 		setupBoard();
 		checkDisable();
 		clearTimeout(aiMove);
@@ -41,39 +81,19 @@ function setupTriggers() {
 	$("#swap").button({icons: { primary: "ui-icon-transfer-e-w" }}).click(function() {
 		swapNext();
 	});
-	$('#board').on({
-		mouseenter: function() {
-			if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
-				$(this).addClass("h-"+color + " hover");
-			}
-		},
-		mouseleave: function() {
-			if ($(this).hasClass("hover")) {
-				$(this).removeClass("h-"+color + " hover");
-			}
-		},
-		click: function() { // TODO - BUG: when clicking the piece (rather than dropping or click-dropping), the checkWin doesn't use the new board state
-			if ($('.next').attr('value') != "ai" && $(this).hasClass('hover') && !$(this).is('.yellow, .red')) {
-				var id = $(this).attr('id').substring(7);
-				placePiece(id);
-				$(this).removeClass("h-yellow h-red");
-				if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
-					$(this).addClass("h-"+color + " hover");
-				}
-			}
-		}
-	}, ".circle");
 }
 
 // swapNext - Swap to the next player, disable or play AI if needed
 function swapNext() {
 	if (checkWin(color)) {
-		console.log("Winner: " + color);
-	} 
-	$('#yellow, #red').toggleClass("next");
-	color = $('.next').attr("id");
-	if (checkDisable()) {
-		aiMove = setTimeout(function() { playAI(); }, 1000);
+		$("#swap, #yellow, #red, .place").button('disable');
+		$("#board").off("mouseenter mouseleave click", ".circle");
+	} else {
+		$('#yellow, #red').toggleClass("next");
+		color = $('.next').attr("id");
+		if (checkDisable()) {
+			aiMove = setTimeout(function() { playAI(); }, 1000);
+		}
 	}
 }
 
@@ -140,18 +160,16 @@ function generateBoard(code = 0) {
 	for (var i = 0; i < 7; i++) {
 		board[i] = new Array(6).fill(0);
 	}
-	var colors = ".circle.";
-	if (code == 0) colors += "yellow, .circle.red";
+	var colors = "div.";
+	if (code == 0) colors += "yellow, div.red";
 	else if (code == 1) colors += "yellow";
 	else if (code == 2) colors += "red";
 	$(colors).each(function() {
-		if (!$(this).hasClass('hover')) {
-			var bit = ($(this).hasClass("yellow") || code != 0 ? 1 : 2); 
-			var id = $(this).attr('id').split('-');
-			var column = id[1];
-			var row = id[2];
-			board[column][row] = bit;
-		}
+		var bit = ($(this).hasClass("yellow") || code != 0 ? 1 : 2); 
+		var id = $(this).attr('id').split('-');
+		var column = id[1];
+		var row = id[2];
+		board[column][row] = bit;
 	});
 	return board;
 }
@@ -200,9 +218,11 @@ function checkWin(player) {
 	var code = (player == "yellow" ? 1 : 2);
 	var board = boardToDecimal(generateBoard(code, true), true);
 	var win = hasWon(board);
-	console.log(code + " " + board + " " + win);
 	if (win) {
 		clearTimeout(aiMove);
+		var type =  "<span class='"+player+"'>" + $("#"+player + " span").html() + "</span>";
+		$('span#winner').html(type);
+		var winPop = setTimeout(function() { winDialog.dialog("open") }, 500);
 	}
 	return win;
 }

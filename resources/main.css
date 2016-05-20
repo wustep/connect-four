@@ -37,10 +37,10 @@ body {
 .h-yellow {
 	background: #FFE877;
 }
-.red span {
+.red span, span.red {
 	color: #D12B51;
 }
-.yellow span {
+.yellow span, span.yellow {
 	color: #D3C949;
 }
 .place {
