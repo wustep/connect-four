@@ -64,11 +64,15 @@ function setupBoard() {
 // setupTriggers - Set up various button and div, hover/click triggers
 function setupTriggers() {
 	$('#reset').button({icons:{ primary: " ui-icon-refresh" }}).click(function() {
+		clearTimeout(aiMove);
 		$("#board").off("mouseenter mouseleave click", ".circle");
 		setupBoard();
-		checkDisable();
-		clearTimeout(aiMove);
-		aiMove = setTimeout(function() { playAI(); }, 1000);
+		// Reset to two humans with yellow going first
+		$("#yellow, #red").attr("value", "human");
+		$("#yellow span, #red span").html("Human");
+		$("#red").removeClass("next");
+		$("#yellow").addClass("next");
+		color = yellow;
 	});
 	$('#yellow, #red').button().click(function() {
 		var against = $(this).attr("value") === "human" ? "AI" : "Human";
@@ -88,6 +92,7 @@ function swapNext() {
 	if (checkWin(color)) {
 		$("#swap, #yellow, #red, .place").button('disable');
 		$("#board").off("mouseenter mouseleave click", ".circle");
+		$(".circle:not(.yellow, .red)").addClass("disabled");
 	} else {
 		$('#yellow, #red').toggleClass("next");
 		color = $('.next').attr("id");

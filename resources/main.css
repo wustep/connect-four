@@ -43,6 +43,10 @@ body {
 .yellow span, span.yellow {
 	color: #D3C949;
 }
+.disabled {
+	color: #808080;
+	background-color: #EEEEEE;
+}
 .place {
 	height: 20px;
 	width: 60px !important;
