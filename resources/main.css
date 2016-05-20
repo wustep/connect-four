@@ -20,16 +20,22 @@ body {
 	display: inline-block;
 }
 .circle.red {
-	background: #D12B51; 
-	background: -moz-radial-gradient(center, ellipse cover, #D12B51 0%, #BD173D 100%); 
-	background: -webkit-radial-gradient(center, ellipse cover, #D12B51 0%, #BD173D 100%); 
-	background: radial-gradient(ellipse at center, #D12B51 0%, #BD173D 100%);
+	background: #EF496F; 
+	background: -moz-radial-gradient(center, ellipse cover, #EF496F 0%, #BD173D 100%); 
+	background: -webkit-radial-gradient(center, ellipse cover, #EF496F 0%, #BD173D 100%); 
+	background: radial-gradient(ellipse at center, #EF496F 0%, #BD173D 100%);
 }
 .circle.yellow {
-	background: #f1e767; 
-	background: -moz-radial-gradient(center, ellipse cover, #f1e767 0%, #feb645 100%); 
-	background: -webkit-radial-gradient(center, ellipse cover, #f1e767 0%, #feb645 100%);
-	background: radial-gradient(ellipse at center, #f1e767 0%, #feb645 100%); 
+	background: #FFE877; 
+	background: -moz-radial-gradient(center, ellipse cover, #FFE877 0%, #feb645 100%); 
+	background: -webkit-radial-gradient(center, ellipse cover, #FFE877 0%, #feb645 100%);
+	background: radial-gradient(ellipse at center, #FFE877 0%, #feb645 100%); 
+}
+.h-red {
+	background: #EF496F; 
+}
+.h-yellow {
+	background: #FFE877;
 }
 .red span {
 	color: #D12B51;

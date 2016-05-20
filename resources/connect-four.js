@@ -3,7 +3,7 @@ var aiMove;
 
 function setupBoard() {
 	$("#board").html("");
-	for (var i = 1; i < 8; i++) {
+	for (var i = 0; i < 7; i++) {
 		$("#board").append("<button class='place' id='place-"+i+"'></button>")
 	}
 	$("#board").append("<br>")
@@ -12,18 +12,41 @@ function setupBoard() {
 		var column = $(this).attr("id").split('-')[1];
 		placePiece(column);
 	});
-	for (var i = 1; i < 43; i++) {
-		$("#board").append("<div class='box'><div class='circle' id='circle-"+i+"'>"+i+"</div></div>");
-		if (i % 7 == 0) {
-			$("#board").append("<br>");
+	for (var i = 5; i >= 0; i--) { // column x row
+		for (var j = 0; j < 7; j++) {
+			var id = j + "-" + i;
+			$("#board").append("<div class='box'><div class='circle' id='circle-"+id+"'>"+id+"</div></div>");
+		}
+		$("#board").append("<br>");
+	}
+	$('.circle').hover(
+	function() {
+		if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
+			$(this).addClass("h-"+color + " hover");
+		}
+	},
+	function() {
+		if ($(this).hasClass("hover")) {
+			$(this).removeClass("h-"+color + " hover");
 		}
 	}
+	).click(
+	function() {
+		if ($('.next').attr('value') != "ai" && $(this).hasClass('hover') && !$(this).is('.yellow, .red')) {
+			var id = $(this).attr('id').substring(7);
+			placePiece(id);
+			$(this).removeClass("h-yellow h-red");
+			if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
+				$(this).addClass("h-"+color + " hover");
+			}
+		}
+	});
 }
 
 function setupTriggers() {
 	$("#swap").button({icons: { primary: "ui-icon-transfer-e-w" }});
 	$('#yellow, #red').button().click(function() {
-		var against = $(this).attr("value") == "human" ? "AI" : "Human";
+		var against = $(this).attr("value") === "human" ? "AI" : "Human";
 		$(this).attr("value", against.toLowerCase());
 		$("span", this).html(against);
 		if (checkDisable()) {
@@ -38,24 +61,6 @@ function setupTriggers() {
 	$('#swap').button().click(function() {
 		swapNext();
 	});
-	$('.circle').hover(
-	function() {
-		if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
-			$(this).addClass(color + " hover");
-		}
-	},
-	function() {
-		if ($(this).hasClass("hover")) {
-			$(this).removeClass(color + " hover");
-		}
-	}
-	).click(
-	function() {
-		if ($('.next').attr('value') != "ai" && $(this).hasClass('hover')) {
-			var id = $(this).attr("id").split('-')[1];
-			placePiece(id);
-		}
-	});
 }
 
 function swapNext() {
@@ -66,19 +71,21 @@ function swapNext() {
 	}
 }
 
+// Either use placePiece('1-5') or just placePiece(5)
 function placePiece(place) {
+	var column = place.toString().indexOf('-') != -1 ? place.split('-')[0] : place;
+	var row = place.toString().indexOf('-') != -1 ? place.split('-')[1] : 5;
 	var placeColor = color;
 	var placed = false;
-	if (place < 43 && ($("#circle-"+place).hasClass('hover') || !$("#circle-"+place).is('.yellow, .red'))) { // Check valid and empty
+	var id = column + "-" + row;
+	if (parseInt(row) >= 0 && ($("#circle-"+id).hasClass('hover') || !$("#circle-"+id).is('.yellow, .red'))) { // Check valid and empty
 		placed = true;
-		$(".circle.last").removeClass("last");
-		$("#circle-"+place).addClass(placeColor + " last");
-		if (placePiece((parseInt(place) + 7)) == true) { // Try to place into slot below it and check
-			$("#circle-"+place).removeClass(placeColor + " last");
-		} else {
+		if (!placePiece(column + "-" + (parseInt(row) - 1))) { // Try to place into slot below it and check
+			$(".circle.last").removeClass("last");
+			$("#circle-"+id).addClass(placeColor + " last");
 			swapNext();
 		}
-	} 
+	}
 	return placed;
 }
 
@@ -88,58 +95,60 @@ function checkWon(player) { // Player "yellow" = 1, "red" = 2
 
 function checkDisable() { // Check if game needs to disable drop buttons
 	var disabled = false;
-	if ($('.next').attr('value') == "ai") {
+	if (checkFull() || $('.next').attr('value') === "ai") {
 		disabled = true;
 		$('.place').button('disable');
 	} else {
-		$('.place').button("enable");
+		for (var i = 0; i < 7; i++) {
+			if (checkFull(i)) {
+				$('#place-' + i).button('disable');
+			} else {
+				$('#place-' + i).button('enable');
+			}
+		}
 	}
 	return disabled;
 }
 
 function generateBoard() {
-	var board = new Array(6);
-	for (var i = 0; i < 6; i++) {
-		board[i] = new Array(7).fill(0);
+	var board = new Array(7);
+	for (var i = 0; i < 7; i++) {
+		board[i] = new Array(6).fill(0);
 	}
 	$(".circle.yellow, .circle.red").each(function() {
 		if (!$(this).hasClass('hover')) {
-			var id = $(this).attr("id").split('-')[1];
 			var color = $(this).hasClass("yellow") ? 1 : 2;
-			var row = Math.floor((id - 1) / 7);
-			var column = id - (row * 7) - 1;
-			board[row][column] = color;
+			var id = $(this).attr('id').split('-');
+			var column = id[1];
+			var row = id[2];
+			board[column][row] = color;
 		}
 	});
 	return board;
 }
 
-function checkFull() {
-	var full = true;
-	var i = 1;
-	while (i < 8 && full) {
-		if (!$('#circle-'+i).is(".yellow, .red")) full = false;
-		i++;
-	}
-	return full;
+function checkFull(col = -1) {
+	var id = ((col == -1) ? ".circle:not(.yellow, .red)" : "div[id^='circle-"+col+"-']:not(.yellow, .red)");
+	console.log(col + ":" + $(id).length);
+	return $(id).length == 0;
 }
 
 function playAI() {
-	if ($('.next').attr('value') == "ai") {
+	if ($('.next').attr('value') === "ai") {
 		var color = $('.next').attr('id');
 		var placed = false;
 		while (!placed && !checkFull()) {
-			var rand = Math.floor((Math.random() * 7) + 1);
+			var rand = Math.floor((Math.random() * 7));
 			placed = placePiece(rand);
 		}
 	}
 }
 /*
-           [0][1][2][3][4][5][6]
-board[0] -  1  2  3  4  5  6  7 
-board[1] -  8  9 10 11 12 13 14 
-board[2] - 15 16 17 18 19 20 21
-board[3] - 22 23 24 25 26 27 28
-board[4] - 29 30 31 32 33 34 35
-board[5] - 36 37 38 39 40 41 42
+ board[0][1][2][3][4][5][6]
+[0] -  1  2  3  4  5  6  7 
+[1] -  8  9 10 11 12 13 14 
+[2] - 15 16 17 18 19 20 21
+[3] - 22 23 24 25 26 27 28
+[4] - 29 30 31 32 33 34 35
+[5] - 36 37 38 39 40 41 42
 */
