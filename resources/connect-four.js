@@ -54,7 +54,7 @@ function setupBoard() {
 				placePiece(id);
 				$(this).removeClass("h-yellow h-red");
 				if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
-					$(this).addClass("h-"+color + " hover");
+					$(this).addClass("h-"+color+" hover");
 				}
 			}
 		}
@@ -72,14 +72,14 @@ function setupTriggers() {
 		$("#yellow span, #red span").html("Human");
 		$("#red").removeClass("next");
 		$("#yellow").addClass("next");
-		color = yellow;
+		color = "yellow";
 	});
 	$('#yellow, #red').button().click(function() {
 		var against = $(this).attr("value") === "human" ? "AI" : "Human";
 		$(this).attr("value", against.toLowerCase());
 		$("span", this).html(against);
 		if (checkDisable()) {
-			aiMove = setTimeout(function() { playAI(); }, 1000);
+			aiMove = setTimeout(function() { playAI(); }, 2500);
 		}
 	});
 	$("#swap").button({icons: { primary: "ui-icon-transfer-e-w" }}).click(function() {
@@ -97,7 +97,7 @@ function swapNext() {
 		$('#yellow, #red').toggleClass("next");
 		color = $('.next').attr("id");
 		if (checkDisable()) {
-			aiMove = setTimeout(function() { playAI(); }, 1000);
+			aiMove = setTimeout(function() { playAI(); }, 2500);
 		}
 	}
 }
@@ -125,7 +125,7 @@ function checkDisable() {
 	var disabled = false;
 	if (checkFull() || $('.next').attr('value') === "ai") {
 		disabled = true;
-		$('.place').button('disable');
+		$('.place').button('disable');	
 	} else {
 		for (var i = 0; i < 7; i++) {
 			if (checkFull(i)) {
@@ -141,19 +141,91 @@ function checkDisable() {
 // checkFull(col) - Check column 'col' or entire board and return true if full
 function checkFull(col = -1) {
 	var id = ((col == -1) ? ".circle:not(.yellow, .red)" : "div[id^='circle-"+col+"-']:not(.yellow, .red)");
-	return $(id).length == 0;
+	var full = $(id).length == 0;
+	if (col == -1 && full) {
+		clearTimeout(aiMove);
+		$("#win-dialog").dialog("option", "title", "Draw");
+		$('p#win-text').html("<span class='ui-icon ui-icon-star' style='display:inline-block'></span> There has been a draw!");
+		var winPop = setTimeout(function() { winDialog.dialog("open") }, 500);	
+	}
 }
 
 // playAI - Make the AI move
 function playAI() {
 	if ($('.next').attr('value') === "ai") {
-		var color = $('.next').attr('id');
+		var code = $('.next').attr('id') == "yellow" ? 1 : 2; // Get AI's color number
 		var placed = false;
-		while (!placed && !checkFull()) {
-			var rand = Math.floor((Math.random() * 7));
-			placed = placePiece(rand);
+		if (!$("#circle-3-0").is(".yellow, .red")) { // Start center if first
+			placePiece(3);
+			placed = true;
+		} else {
+			var winner = -1;
+			var blocker = -1;
+			for (var i = 0; i < 7; i++) { // Try to find winner / blocker
+				if (!checkFull(i)) {
+					var board = generateBoard();
+					var aiBoard = generateBoard(code);
+					var enemyBoard = generateBoard(code == 1 ? 2 : 1);
+					var rowPlayed = getRowIfPlaced(i, board);
+					board[i][rowPlayed] = code;
+					aiBoard[i][rowPlayed] = 1;
+					enemyBoard[i][rowPlayed] = 1;
+					if (hasWon(boardToDecimal(aiBoard), false)) {
+						winner = i;
+					} else if (blocker < 0 && hasWon(boardToDecimal(enemyBoard), false)) { 
+						blocker = i;
+					}
+				}
+			}
+			if (winner > -1) {
+				placePiece(winner);
+				placed = true;
+			} else if (blocker != -1) {
+				placePiece(blocker);
+				placed = true;
+			} else {
+				while (!placed && !checkFull()) {
+					var slots = Array(); // Make array of unfilled columns
+					var badSlots = Array();
+					for (var s = 0; s < 7; s++) {
+						if (!checkFull(s)) {
+							slots.push(s);
+							var board = generateBoard();
+							var tRow = getRowIfPlaced(s, board);
+							if (tRow < 5) { // Check for bad slots
+								var enemyBoard = generateBoard(code == 1 ? 2 : 1);
+								enemyBoard[s][rowPlayed + 1] = 1;
+								if (hasWon(boardToDecimal(enemyBoard), false)) {
+									badSlots.push(s);
+								}
+							}
+						}
+					}
+					if (slots.length != badSlots.length) {
+						slots = slots.filter( function( el ) {
+							return badSlots.indexOf( el ) < 0;
+						});
+					}
+					var col = slots[Math.floor((Math.random() * slots.length))];
+					if (badSlots.indexOf(3) == -1 && !$("#circle-3-5").is(".yellow, .red")) col = 3; // Play center as opposed to others if not a danger spot
+					placed = placePiece(col);
+				}
+			}
 		}
 	}
+}
+
+// getRowIfPlaced - If a piece is played in given column, return its row (column-row)
+function getRowIfPlaced(column, board) {
+	var found = false;
+	var row = 0;
+	while (!found && row < 6) {
+		if (board[column][row] == 0) found = true;
+		else row++;
+	}
+	if (row > 5) row = -1;
+	return row;
+	
 }
 
 // generateBoard(code, addRow) - generate a bitboard for player code
@@ -197,7 +269,7 @@ function boardToDecimal(board) {
 function hasWon(board) {	
 	var diag1 = bAnd(board, board * Math.pow(2, -6)); // diagonal check
 	var horz = bAnd(board, board * Math.pow(2, -7)); // horizontal check
-	var diag2 = bAnd(board, board * Math.pow(2, -7)); // diagonal check
+	var diag2 = bAnd(board, board * Math.pow(2, -8)); // diagonal check
 	var vert = bAnd(board, board * Math.pow(2, -1)); // vertical check 
 	return (bAnd(diag1, diag1 * Math.pow(2,-12)) != 0) || (bAnd(horz, horz * Math.pow(2,-14)) != 0) || (bAnd(diag2, diag2 * Math.pow(2,-16)) != 0) || (bAnd(vert, vert * Math.pow(2,-2)) != 0);
 }
@@ -219,14 +291,15 @@ function bAnd(val1, val2) {
 }
   
 // testWin - Test if player ("yellow"/"red") has won 
-function checkWin(player) {
+function checkWin(player, real=true) {
 	var code = (player == "yellow" ? 1 : 2);
-	var board = boardToDecimal(generateBoard(code, true), true);
+	var board = boardToDecimal(generateBoard(code));
 	var win = hasWon(board);
-	if (win) {
+	if (win && real) {
 		clearTimeout(aiMove);
-		var type =  "<span class='"+player+"'>" + $("#"+player + " span").html() + "</span>";
-		$('span#winner').html(type);
+		$("#win-dialog").attr("title", "Winner");
+		var playerr =  "<span class='"+player+"'>" + $("#"+player + " span").html() + "</span>";
+		$('p#win-text').html("<span class='ui-icon ui-icon-star' style='display:inline-block'></span> "+playerr+" has won the game!");
 		var winPop = setTimeout(function() { winDialog.dialog("open") }, 500);
 	}
 	return win;
