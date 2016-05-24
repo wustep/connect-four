@@ -114,6 +114,7 @@ function placePiece(place) {
 		if (!placePiece(column + "-" + (parseInt(row) - 1))) { // If next placement failed, use this one
 			$(".circle.last").removeClass("last");
 			$("#circle-"+id).addClass(placeColor + " last");
+			console.log(placeColor + " : " + id)
 			swapNext();
 		}
 	}
@@ -138,7 +139,8 @@ function checkDisable() {
 	return disabled;
 }
 
-// checkFull(col) - Check column 'col' or entire board and return true if full
+// checkFull() - Check if current board state is full
+// checkFull(col) - Check if column is full
 function checkFull(col = -1) {
 	var id = ((col == -1) ? ".circle:not(.yellow, .red)" : "div[id^='circle-"+col+"-']:not(.yellow, .red)");
 	var full = $(id).length == 0;
@@ -148,12 +150,13 @@ function checkFull(col = -1) {
 		$('p#win-text').html("<span class='ui-icon ui-icon-star' style='display:inline-block'></span> There has been a draw!");
 		var winPop = setTimeout(function() { winDialog.dialog("open") }, 500);	
 	}
+	return full;
 }
 
 // playAI - Make the AI move
 function playAI() {
 	if ($('.next').attr('value') === "ai") {
-		var code = $('.next').attr('id') == "yellow" ? 1 : 2; // Get AI's color number
+		var code = $('.next').attr('id') == "yellow" ? 1 : -1; // Get AI's color number
 		var placed = false;
 		if (!$("#circle-3-0").is(".yellow, .red")) { // Start center if first
 			placePiece(3);
@@ -165,14 +168,14 @@ function playAI() {
 				if (!checkFull(i)) {
 					var board = generateBoard();
 					var aiBoard = generateBoard(code);
-					var enemyBoard = generateBoard(code == 1 ? 2 : 1);
+					var enemyBoard = generateBoard(-code);
 					var rowPlayed = getRowIfPlaced(i, board);
 					board[i][rowPlayed] = code;
 					aiBoard[i][rowPlayed] = 1;
 					enemyBoard[i][rowPlayed] = 1;
-					if (hasWon(boardToDecimal(aiBoard), false)) {
+					if (hasWon(aiBoard)) {
 						winner = i;
-					} else if (blocker < 0 && hasWon(boardToDecimal(enemyBoard), false)) { 
+					} else if (blocker < 0 && hasWon(enemyBoard)) { 
 						blocker = i;
 					}
 				}
@@ -186,22 +189,22 @@ function playAI() {
 			} else {
 				while (!placed && !checkFull()) {
 					var slots = Array(); // Make array of unfilled columns
-					var badSlots = Array();
+					var badSlots = Array(); // Keep track of "bad slots"
 					for (var s = 0; s < 7; s++) {
 						if (!checkFull(s)) {
 							slots.push(s);
 							var board = generateBoard();
 							var tRow = getRowIfPlaced(s, board);
-							if (tRow < 5) { // Check for bad slots
-								var enemyBoard = generateBoard(code == 1 ? 2 : 1);
-								enemyBoard[s][rowPlayed + 1] = 1;
-								if (hasWon(boardToDecimal(enemyBoard), false)) {
+							if (tRow < 5) { // Check if bad slots if there is room left in column
+								var enemyBoard = generateBoard(-code);
+								enemyBoard[s][tRow + 1] = 1;
+								if (hasWon(enemyBoard)) { // Check if placing there would let the enemy win -> "bad slot"
 									badSlots.push(s);
 								}
 							}
 						}
 					}
-					if (slots.length != badSlots.length) {
+					if (slots.length != badSlots.length) { // Exclude bad slots if possible
 						slots = slots.filter( function( el ) {
 							return badSlots.indexOf( el ) < 0;
 						});
@@ -213,6 +216,106 @@ function playAI() {
 			}
 		}
 	}
+}
+
+// playAI2 - Second playAI (incomplete)
+function playAI2() {
+	//if ($('.next').attr('value') === "ai") {
+		var code = $('.next').attr('id') == "yellow" ? 1 : -1;
+		var slots = getBestSlots(generateBoard(), code);
+		var col = slots[Math.floor((Math.random() * slots.length))];
+		placePiece(col);
+	//}
+}
+function getBestSlots(board, code) { 
+	var t = evalBoard(board, code);
+	console.log(t);
+	var max = 0;
+	var slots = new Array();
+	var loc = -1; 
+	for (var i = 0; i < 7; i++) { 
+		if (Math.abs(t[i]) > Math.abs(max)) { 
+			max = t[i]; 
+			loc = i; 
+		}  
+	} 
+	for (var i = 0; i < 7; i++) {
+		if (Math.abs(t[i]) == Math.abs(max))
+			slots.push(i);
+	}
+	return slots;
+}
+// evalBoard - Evaluate columns scores 
+function evalBoard(bitboard, code) { // Test = returns id of placement
+	var scores = new Array(7).fill(50);
+	if (!checkFullBoard(bitboard)) {
+		if (!checkFullBoard(bitboard, 3)) {
+			scores[3] = 100;
+		}
+		var col = 0;
+		while (col < 7) {
+			if (!checkFullBoard(bitboard, col)) {
+				var aiBoard = generatePlayerBoard(code, bitboard);
+				var enemyBoard = generatePlayerBoard(-code, bitboard);
+				var rowPlayed = getRowIfPlaced(col, bitboard);
+				aiBoard[col][rowPlayed] = 1;
+				enemyBoard[col][rowPlayed] = 1;
+				if (hasWon(aiBoard)) {
+					scores[col] = 1000; // win
+				} else if (hasWon(enemyBoard)) { 
+					scores[col] = -999; // win for opponent 
+				} else if (rowPlayed < 5) {
+					enemyBoard[col][rowPlayed] = 0;
+					enemyBoard[col][rowPlayed + 1] = 1;
+					if (hasWon(enemyBoard)) { // win for opponent in next turn (may remove this later)
+						scores[col] = -25;
+					}
+				}
+			} else {
+				scores[col] = 0;
+			}
+			col++;
+		}
+	}
+	return scores;
+}
+
+// generatePlayerBoard - Given a full bitboard, generate a single player's board
+function generatePlayerBoard(player, board) { 
+	var newBoard = new Array(7);
+	for (var i = 0; i < 7; i++) {
+		newBoard[i] = new Array(6);
+		for (var j = 0; j < 6; j++) {
+			if (board[i][j] == player) {
+				newBoard[i][j] = 1;
+			} else {
+				newBoard[i][j] = 0; 
+			}
+		}
+	}
+	return newBoard;
+}
+
+// checkFullBoard() - Checks if current board state is full
+// checkFullBoard(board) - Checks if given board is full
+// checkFullBoard(board, column) - Checks if column of board is full
+function checkFullBoard(board = generateBoard(), col = -1) {
+	if (col == -1) {
+		for (var i = 0; i < 7; i++) {
+			for (var j = 0; j < 6; j++) {
+				if (board[i][j] == 0) {
+					return false;
+				}
+			}
+		}
+	} else {
+		for (var j = 0; j < 6; j++) {
+			if (board[col][j] == 0) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 // getRowIfPlaced - If a piece is played in given column, return its row (column-row)
@@ -229,7 +332,7 @@ function getRowIfPlaced(column, board) {
 }
 
 // generateBoard(code, addRow) - generate a bitboard for player code
-// code: 0 = both, 1 = yellow, 2 = red
+// code: 0 = both, 1 = yellow, -1 = red
 // Board will return array of 0/1/2 OR 0/1 for yellow/red boards
 // addRow adds an additional row for purposes of converting to long / solution checking
 function generateBoard(code = 0) {
@@ -240,9 +343,9 @@ function generateBoard(code = 0) {
 	var colors = "div.";
 	if (code == 0) colors += "yellow, div.red";
 	else if (code == 1) colors += "yellow";
-	else if (code == 2) colors += "red";
+	else if (code == -1) colors += "red";
 	$(colors).each(function() {
-		var bit = ($(this).hasClass("yellow") || code != 0 ? 1 : 2); 
+		var bit = ($(this).hasClass("yellow") || code != 0 ? 1 : -1); 
 		var id = $(this).attr('id').split('-');
 		var column = id[1];
 		var row = id[2];
@@ -252,12 +355,12 @@ function generateBoard(code = 0) {
 }
 
 // Convert bitboard array to its decimal representation
-function boardToDecimal(board) {
+function boardToDecimal(bitboard) {
 	var decimal = 0;
 	var rows = 6;
 	for (var i = 0; i < 7; i++) {
 		for (var j = 0; j < 6; j++) {
-			if (board[i][j] == 1) {
+			if (bitboard[i][j] == 1) {
 				decimal += Math.pow(2, 7*i + j);
 			}
 		}
@@ -266,7 +369,8 @@ function boardToDecimal(board) {
 }
 
 // hasWon - Given a player's board, check if they are the winner - Adapted from John Tromp's method - https://tromp.github.io/c4/c4.html
-function hasWon(board) {	
+function hasWon(bitboard) {
+	var board = boardToDecimal(bitboard);
 	var diag1 = bAnd(board, board * Math.pow(2, -6)); // diagonal check
 	var horz = bAnd(board, board * Math.pow(2, -7)); // horizontal check
 	var diag2 = bAnd(board, board * Math.pow(2, -8)); // diagonal check
@@ -292,8 +396,8 @@ function bAnd(val1, val2) {
   
 // testWin - Test if player ("yellow"/"red") has won 
 function checkWin(player, real=true) {
-	var code = (player == "yellow" ? 1 : 2);
-	var board = boardToDecimal(generateBoard(code));
+	var code = (player == "yellow" ? 1 : -1);
+	var board = generateBoard(code);
 	var win = hasWon(board);
 	if (win && real) {
 		clearTimeout(aiMove);
