@@ -114,7 +114,7 @@ function placePiece(place) {
 		if (!placePiece(column + "-" + (parseInt(row) - 1))) { // If next placement failed, use this one
 			$(".circle.last").removeClass("last");
 			$("#circle-"+id).addClass(placeColor + " last");
-			console.log(placeColor + " : " + id)
+			console.log(placeColor.charAt(0).toUpperCase() + ": " + id)
 			swapNext();
 		}
 	}
@@ -229,7 +229,7 @@ function playAI2() {
 }
 function getBestSlots(board, code) { 
 	var t = evalBoard(board, code);
-	console.log(t);
+	console.log('%c[' + t + ']', "color: orange");
 	var max = 0;
 	var slots = new Array();
 	var loc = -1; 
@@ -245,7 +245,7 @@ function getBestSlots(board, code) {
 	}
 	return slots;
 }
-function evalBoard(bitboard, code) { // Test = returns id of placement
+function evalBoard(bitboard, code) { 
 	var scores = new Array(7).fill(25);
 	if (!checkFullBoard(bitboard)) {
 		if (!checkFullBoard(bitboard, 3)) {
@@ -266,7 +266,7 @@ function evalBoard(bitboard, code) { // Test = returns id of placement
 				} else if (rowPlayed < 5) {
 					enemyBoard[col][rowPlayed] = 0;
 					enemyBoard[col][rowPlayed + 1] = 1;
-					if (hasWon(enemyBoard)) { // win for opponent in next turn (may remove this later)
+					if (hasWon(enemyBoard)) { // win for opponent in next turn
 						scores[col] = -10;
 					}
 				}
@@ -282,46 +282,58 @@ function evalBoard(bitboard, code) { // Test = returns id of placement
 // playAI3 - Third AI
 function playAI3() {
 	//if ($('.next').attr('value') === "ai") {
+	if ($('.circle.yellow, .circle.red').length < 3) {
+		placePiece(3);
+	} else {
+		var board = generateBoard();
 		var code = $('.next').attr('id') == "yellow" ? 1 : -1;
-		var slots = minimax(generateBoard(), code, 6, true);
+		var slots = minimax(board, code, 6, true);
 		var col = slots[0];
 		placePiece(col);
+	}
 	//}
 }
-function minimax(board=generateBoard(), code=-1, depth=5, maxing=true) {
-	var initial = [-1, evalBoard2(board, (maxing) ? code : -code, maxing)];
-	if (depth == 0 || initial[1] == 10000 || initial[1] == -10000) return initial;
+function minimax(board=generateBoard(), code=-1, depth=6, maxing=true, alpha, beta) {
+	var initial = [-1, evalBoard2(board, code)];
+	if (depth == 0 || initial[1] == 100000 || initial[1] == -100000) return initial;
 	var best = (maxing) ? [-1, -100000] : [-1, 100000];
 	var columns = shuffle([0,1,2,3,4,5,6]);
+	//var columns = [0,1,2,3,4,5,6];
 	for (var i = 0; i < 7; i++) {
 		var col = columns[i];
 		if (!checkFullBoard(board, col)) {
 			var newBoard = JSON.parse(JSON.stringify(board));
 			var rowPlayed = getRowIfPlaced(col, newBoard);
 			newBoard[col][rowPlayed] = (maxing) ? code : -code;
-			var v = minimax(newBoard, code, depth-1, !maxing);
+			var v = minimax(newBoard, code, depth-1, !maxing, alpha, beta);
 			if (best[0] == -1 || (maxing && v[1] > best[1]) || (!maxing && v[1] < best[1])) {
-				best = [col, v[1]/2 + initial[1]/2];
+				best = [col, v[1] / 2];
+				if (maxing) alpha = v[1] / 2;
+				else beta = v[1] / 2; 
+			}
+			if (depth == 6) 
+				console.log('%c[' + col + " " + v[1] + "] [" + best[0] + " " + best[1] + "]", "color: red");
+			if (alpha >= beta) {
+				return best;
 			}
 		}
 	}
-	if (!checkFullBoard(board, 3) && ((maxing && best[1] < 1000) || (!maxing && best[1] > -1000))) best = [3, (maxing) ? 1000 : -1000];
 	return best;
 }
-function evalBoard2(board=generateBoard(), code=-1, maxing=true) {
+function evalBoard2(board=generateBoard(), code=-1) {
 	var aiBoard = generatePlayerBoard(code, board);
 	var enemyBoard = generatePlayerBoard(-code, board);
 	var score = 0;
 	if (hasWon(aiBoard)) {
-		score = 10000;
+		score = 100000;
 	} else if (hasWon(enemyBoard)) { 
-		score = -10000; 
+		score = -100000; 
 	} else {
 		//var t = evalBoard(board, -code);
 		//if (t.indexOf(1000) != -1) score = -10000; // If this board lets the other player win next
 		//else if (t.indexOf(-1000) != -1) score = 2000; // If next play blocks this player's win
 	}
-	return (maxing) ? score : -score;
+	return score;
 }
 
 function shuffle(array) {
