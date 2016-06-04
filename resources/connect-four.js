@@ -17,27 +17,20 @@ var winDialog = $("#win-dialog").dialog({
 });
 
 // setupBoard - Set up or reset the game board and placement buttons
-function setupBoard() {
+function resetBoard() {
 	$("#swap").button("enable");
 	$("#yellow, #red").button("enable");
-	$("#board").html("");
-	for (var i = 0; i < 7; i++) { // Add place buttons
-		$("#board").append("<button class='place' id='place-"+i+"'></button>")
-	}
-	$("#board").append("<br>")
+	$(".place").button("enable");
+	$(".circle").removeClass("red yellow h-yellow h-red hover last disabled");
+}
+
+function setupBoard() {
 	$(".place").button({icons: { primary: "ui-icon-carat-1-s" }, text: false})
 	$(".place").on("click", function() {
 		var column = $(this).attr("id").split('-')[1];
 		placePiece(column);
 	});
-	for (var i = 5; i >= 0; i--) { // column x row
-		for (var j = 0; j < 7; j++) {
-			var id = j + "-" + i;
-			$("#board").append("<div class='box'><div class='circle' id='circle-"+id+"'>"+id+"</div></div>");
-		}
-		$("#board").append("<br>");
-	}
-	$('#board').on({ // TODO: Fix redundancy here and for .place - This method is repeatedly called
+	$('#board').on({
 		mouseenter: function() {
 			if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
 				$(this).addClass("h-"+color + " hover");
@@ -65,8 +58,7 @@ function setupBoard() {
 function setupTriggers() {
 	$('#reset').button({icons:{ primary: " ui-icon-refresh" }}).click(function() {
 		clearTimeout(aiMove);
-		$("#board").off("mouseenter mouseleave click", ".circle");
-		setupBoard();
+		resetBoard();
 		// Reset to two humans with yellow going first
 		$("#yellow, #red").attr("value", "human");
 		$("#yellow span, #red span").html("Human");
@@ -220,12 +212,12 @@ function playAI() {
 
 // playAI2 - Second playAI - Ranks board states after placing in each column
 function playAI2() {
-	//if ($('.next').attr('value') === "ai") {
+	if ($('.next').attr('value') === "ai") {
 		var code = $('.next').attr('id') == "yellow" ? 1 : -1;
 		var slots = getBestSlots(generateBoard(), code);
 		var col = slots[Math.floor((Math.random() * slots.length))];
 		placePiece(col);
-	//}
+	}
 }
 function getBestSlots(board, code) { 
 	var t = evalBoard(board, code);
@@ -281,17 +273,17 @@ function evalBoard(bitboard, code) {
 
 // playAI3 - Third AI
 function playAI3() {
-	//if ($('.next').attr('value') === "ai") {
-	if ($('.circle.yellow, .circle.red').length < 3) {
-		placePiece(3);
-	} else {
-		var board = generateBoard();
-		var code = $('.next').attr('id') == "yellow" ? 1 : -1;
-		var slots = minimax(board, code, 6, true);
-		var col = slots[0];
-		placePiece(col);
+	if ($('.next').attr('value') === "ai") {
+		if ($('.circle.yellow, .circle.red').length < 3) {
+			placePiece(3);
+		} else {
+			var board = generateBoard();
+			var code = $('.next').attr('id') == "yellow" ? 1 : -1;
+			var slots = minimax(board, code, 6, true);
+			var col = slots[0];
+			placePiece(col);
+		}
 	}
-	//}
 }
 function minimax(board=generateBoard(), code=-1, depth=6, maxing=true, alpha, beta) {
 	var initial = [-1, evalBoard2(board, code)];

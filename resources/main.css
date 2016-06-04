@@ -62,3 +62,39 @@ body {
 .hover {
 	cursor: pointer;
 }
+
+@media screen and (max-width: 500px) {
+	.place {
+		height: 20px;
+		width: 11vw !important;
+		margin: 1vw;
+	}
+	.circle {
+		border-radius: 50%;
+		background-color: white;
+		display: inline-block;
+		height: 11vw;
+		width: 11vw;
+		text-align: center;
+	}
+	.box {
+		width: 13vw;
+		height: 13vw;
+		background-color: #1E90FF;
+		display: inline-block;
+	}
+	body {
+		padding: 1vw;
+	}
+	button span {
+		font-size: 13px;
+	}
+}
+@media screen and (max-width: 400px) {
+	#versus {
+		display: none;
+	}
+	.circle {
+		color: transparent;
+	}
+}
