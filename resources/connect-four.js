@@ -32,17 +32,17 @@ function setupBoard() {
 	});
 	$('#board').on({
 		mouseenter: function() {
-			if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red')) {
+			if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red, #disabled')) {
 				$(this).addClass("h-"+color + " hover");
 			}
 		},
 		mouseleave: function() {
-			if ($(this).hasClass("hover")) {
+			if ($(this).hasClass("hover") && !$(this).hasClass("disabled")) {
 				$(this).removeClass("h-"+color + " hover");
 			}
 		},
 		click: function() { 
-			if ($('.next').attr('value') != "ai" && $(this).hasClass('hover') && !$(this).is('.yellow, .red')) {
+			if ($('.next').attr('value') != "ai" && $(this).hasClass('hover') && !$(this).is('.yellow, .red, #disabled')) {
 				var id = $(this).attr('id').substring(7);
 				placePiece(id);
 				$(this).removeClass("h-yellow h-red");
@@ -83,7 +83,6 @@ function setupTriggers() {
 function swapNext() {
 	if (checkWin(color)) {
 		$("#swap, #yellow, #red, .place").button('disable');
-		$("#board").off("mouseenter mouseleave click", ".circle");
 		$(".circle:not(.yellow, .red)").addClass("disabled");
 	} else {
 		$('#yellow, #red').toggleClass("next");
