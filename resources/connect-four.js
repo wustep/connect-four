@@ -32,7 +32,7 @@ function setupBoard() {
 	});
 	$('#board').on({
 		mouseenter: function() {
-			if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red, #disabled')) {
+			if ($('.next').attr('value') != "ai" && !$(this).is('.yellow, .red, .disabled')) {
 				$(this).addClass("h-"+color + " hover");
 			}
 		},
@@ -42,7 +42,7 @@ function setupBoard() {
 			}
 		},
 		click: function() { 
-			if ($('.next').attr('value') != "ai" && $(this).hasClass('hover') && !$(this).is('.yellow, .red, #disabled')) {
+			if ($('.next').attr('value') != "ai" && $(this).hasClass('hover') && !$(this).is('.yellow, .red, .disabled')) {
 				var id = $(this).attr('id').substring(7);
 				placePiece(id);
 				$(this).removeClass("h-yellow h-red");
