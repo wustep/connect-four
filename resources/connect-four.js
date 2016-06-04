@@ -442,6 +442,7 @@ function hasWon(bitboard) {
 	var vert = bAnd(board, board * Math.pow(2, -1)); // vertical check 
 	return (bAnd(diag1, diag1 * Math.pow(2,-12)) != 0) || (bAnd(horz, horz * Math.pow(2,-14)) != 0) || (bAnd(diag2, diag2 * Math.pow(2,-16)) != 0) || (bAnd(vert, vert * Math.pow(2,-2)) != 0);
 }
+
 // bAnd - Bitwise And from http://stackoverflow.com/a/3638080
 function bAnd(val1, val2) {
     var shift = 0, result = 0;
